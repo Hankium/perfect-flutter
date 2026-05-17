@@ -5,9 +5,10 @@ top of your running app — emulator, simulator, or physical device — from the
 DevTools panel. **No widget wrapping. No conditional debug paths.** A
 `dev_dependencies` entry plus one import line.
 
-> Status: pre-alpha. Sprints 1–2 of 6 done — panel discoverable, VM service
-> connection working, end-to-end overlay injection verified on a physical
-> Android device (2026-05-17). Image upload + transforms land in S3–S4.
+> Status: pre-alpha. Sprints 1–4 of 6 done. S5 in flight: scroll coupling,
+> show/hide, hot-restart resilience (via panel `localStorage`) all shipped;
+> multi-layer + keyboard shortcuts + UI polish remaining. Verified
+> end-to-end on a physical Android device (2026-05-17).
 
 ## Why
 

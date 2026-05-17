@@ -15,10 +15,15 @@ class InjectionResult {
   const InjectionResult({
     required this.entryRef,
     required this.targetLibraryUri,
+    required this.targetLibraryId,
   });
 
   final String entryRef;
   final String targetLibraryUri;
+
+  /// VM-service-internal id for the runtime library. Reused by transform
+  /// setters to skip the `getIsolate` lookup on every slider tick.
+  final String targetLibraryId;
 }
 
 class Injector {
@@ -61,6 +66,7 @@ class Injector {
     return InjectionResult(
       entryRef: ref.id!,
       targetLibraryUri: lib.uri ?? '',
+      targetLibraryId: lib.id!,
     );
   }
 
