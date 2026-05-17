@@ -1,0 +1,27 @@
+name: perfect_flutter
+
+packages:
+  - packages/*
+
+command:
+  bootstrap:
+    runPubGetInParallel: false
+
+scripts:
+  analyze:
+    run: dart analyze
+    exec:
+      concurrency: 1
+    description: Run dart analyze on all packages.
+
+  format-check:
+    run: dart format --output=none --set-exit-if-changed .
+    description: Verify formatting across all packages.
+
+  test:
+    run: melos exec --concurrency=1 --dir-exists=test -- "flutter test"
+    description: Run tests for packages that have a test/ directory.
+
+  build:extension:
+    run: bash scripts/build_extension.sh
+    description: Build the DevTools extension and bundle it into the perfect_flutter package's extension/devtools/build/ directory.

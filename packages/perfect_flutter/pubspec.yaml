@@ -1,0 +1,24 @@
+name: perfect_flutter
+description: DevTools-based pixel-perfect overlay for Flutter. Inject a design image overlay onto a running debug app from the DevTools panel — no widget wrapping, no app code changes.
+version: 0.0.1
+homepage: https://github.com/Hankium/perfect_flutter
+repository: https://github.com/Hankium/perfect_flutter
+issue_tracker: https://github.com/Hankium/perfect_flutter/issues
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.10.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

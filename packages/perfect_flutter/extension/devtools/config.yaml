@@ -1,0 +1,5 @@
+name: perfect_flutter
+issueTracker: https://github.com/Hankium/perfect_flutter/issues
+version: 0.0.1
+materialIconCodePoint: 0xe53b
+requiresConnection: true

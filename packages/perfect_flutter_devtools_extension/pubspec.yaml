@@ -1,0 +1,24 @@
+name: perfect_flutter_devtools_extension
+description: DevTools extension UI for perfect_flutter. Internal — not published; built artifacts are bundled into the perfect_flutter package.
+version: 0.0.1
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.10.0"
+
+resolution: workspace
+
+dependencies:
+  flutter:
+    sdk: flutter
+  devtools_extensions: ^0.4.0
+  vm_service: ^14.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

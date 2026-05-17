@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  analyze-and-test:
+    name: Analyze, format, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Activate melos
+        run: dart pub global activate melos ^6.3.0
+
+      - name: Bootstrap workspace
+        run: melos bootstrap
+
+      - name: Check formatting
+        run: melos run format-check
+
+      - name: Analyze
+        run: melos run analyze
+
+      - name: Test
+        run: melos run test
+
+  build-extension:
+    name: Build DevTools extension
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Activate melos
+        run: dart pub global activate melos ^6.3.0
+
+      - name: Bootstrap workspace
+        run: melos bootstrap
+
+      - name: Build extension
+        run: melos run build:extension
+
+      - name: Verify build output exists
+        run: |
+          test -f packages/perfect_flutter/extension/devtools/build/index.html \
+            || (echo "Extension build output missing" && exit 1)

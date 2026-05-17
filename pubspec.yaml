@@ -1,0 +1,12 @@
+name: perfect_flutter_workspace
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+
+workspace:
+  - packages/perfect_flutter
+  - packages/perfect_flutter_devtools_extension
+
+dev_dependencies:
+  melos: ^6.3.0

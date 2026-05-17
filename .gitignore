@@ -1,0 +1,28 @@
+# Dart / Flutter
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.iws
+.metadata
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Melos
+.melos_tool/
+melos_*.iml
+
+# DevTools extension build output is checked in (shipped to pub.dev),
+# but intermediate build artifacts are not.
+packages/perfect_flutter/extension/devtools/build/.last_build_id
