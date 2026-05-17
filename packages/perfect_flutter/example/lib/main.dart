@@ -1,11 +1,13 @@
 // Example app for perfect_flutter.
 //
-// Note: there is NO import of perfect_flutter anywhere in this file. The
-// package is declared as a dev_dependency in pubspec.yaml — that is all that
-// is required to make the "Perfect Flutter" tab appear in DevTools when this
-// app runs in debug mode.
+// The single `perfect_flutter` import below is the only code change required
+// in a consuming app — it has no runtime effect, but it ensures the helper
+// class is linked into the debug build so the DevTools panel can call it via
+// the VM service. In release builds, tree-shaking removes everything.
 
 import 'package:flutter/material.dart';
+// ignore: unused_import, depend_on_referenced_packages
+import 'package:perfect_flutter/perfect_flutter.dart';
 
 void main() {
   runApp(const ExampleApp());
@@ -54,16 +56,17 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _FeatureCard(
             title: 'Zero widget wrapping',
-            subtitle: 'No code in this app references perfect_flutter.',
+            subtitle: 'Just one import at the top of main.dart. '
+                'No runApp changes, no debug branches.',
             color: Colors.pink.shade100,
           ),
           const SizedBox(height: 24),
           _SectionHeader('Stats'),
           const Row(
             children: [
-              Expanded(child: _StatTile(label: 'Imports', value: '0')),
+              Expanded(child: _StatTile(label: 'Imports', value: '1')),
               SizedBox(width: 12),
-              Expanded(child: _StatTile(label: 'main.dart edits', value: '0')),
+              Expanded(child: _StatTile(label: 'runApp edits', value: '0')),
               SizedBox(width: 12),
               Expanded(child: _StatTile(label: 'Tabs added', value: '1')),
             ],

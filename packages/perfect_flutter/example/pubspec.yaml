@@ -1,5 +1,5 @@
 name: perfect_flutter_example
-description: Example app demonstrating perfect_flutter as a dev_dependency. No imports, no widget wrapping — only the pubspec entry is needed.
+description: Example app demonstrating perfect_flutter as a dev_dependency. One pubspec line plus one import in main.dart — no widget wrapping, no runApp changes.
 publish_to: 'none'
 version: 1.0.0+1
 

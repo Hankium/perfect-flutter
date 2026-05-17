@@ -2,35 +2,50 @@
 
 DevTools-based pixel-perfect overlay for Flutter. Overlay a design image on
 top of your running app — emulator, simulator, or physical device — from the
-DevTools panel. **No widget wrapping. No app code changes.** Just a single
-`dev_dependencies` entry.
+DevTools panel. **No widget wrapping. No conditional debug paths.** A
+`dev_dependencies` entry plus one import line.
 
-> Status: pre-alpha. Sprint 1 of 6 (foundation) — panel discoverable, VM
-> service connection working. Overlay injection lands in Sprint 2.
+> Status: pre-alpha. Sprints 1–2 of 6 done — panel discoverable, VM service
+> connection working, end-to-end overlay injection verified on a physical
+> Android device (2026-05-17). Image upload + transforms land in S3–S4.
 
 ## Why
 
 Existing Flutter pixel-perfect packages require wrapping the root widget
 (`PixelPerfect(child: MyApp())`), which pollutes the tree and risks shipping
-overlay plumbing into release builds. `perfect_flutter` keeps the app
-untouched: the DevTools extension uses the VM service to inject an
-`OverlayEntry` into the running isolate.
+overlay plumbing into release builds. `perfect_flutter` leaves your widget
+tree untouched: the DevTools extension uses the VM service to call into a
+small runtime helper, which inserts an `OverlayEntry` into the running
+isolate. In release builds, tree-shaking strips the helper.
 
 ## Install (forthcoming)
 
-```yaml
-dev_dependencies:
-  perfect_flutter: ^0.1.0
-```
+1. Add to your app's `pubspec.yaml`:
 
-Then:
+   ```yaml
+   dev_dependencies:
+     perfect_flutter: ^0.1.0
+   ```
 
-1. `flutter pub get`
-2. Run the app in debug mode.
-3. Open DevTools → "Perfect Flutter" tab appears.
-4. Upload a design image → overlay renders on device.
+2. Add one import at the top of `lib/main.dart`:
 
-No imports. No `main.dart` changes.
+   ```dart
+   // ignore: unused_import, depend_on_referenced_packages
+   import 'package:perfect_flutter/perfect_flutter.dart';
+   ```
+
+   The import is required so the runtime helper is linked into the debug
+   build. It has no runtime effect — release builds tree-shake it away. **Do
+   not let your IDE auto-remove this import** (e.g. via "Organize Imports" or
+   `dart fix`) — it will silently break the tool. The `// ignore: ...`
+   comment suppresses the "unused import" lint.
+
+3. `flutter pub get`
+4. Run the app in debug mode.
+5. Open DevTools → "Perfect Flutter" tab appears.
+6. Upload a design image → overlay renders on device.
+
+No widget wrapping. No `runApp` changes.
 
 ## Repo layout
 
