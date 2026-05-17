@@ -5,10 +5,11 @@ top of your running app — emulator, simulator, or physical device — from the
 DevTools panel. **No widget wrapping. No conditional debug paths.** A
 `dev_dependencies` entry plus one import line.
 
-> Status: pre-alpha. Sprints 1–4 of 6 done. S5 in flight: scroll coupling,
-> show/hide, hot-restart resilience (via panel `localStorage`) all shipped;
-> multi-layer + keyboard shortcuts + UI polish remaining. Verified
-> end-to-end on a physical Android device (2026-05-17).
+> Status: pre-alpha. Sprints 1–5 of 6 done — full transform controls,
+> scroll coupling, show/hide, hot-restart resilience (via panel
+> `localStorage`), keyboard shortcuts, and polished UI all shipped. S6
+> (hardening + pub.dev publish) remaining. Verified end-to-end on a
+> physical Android device.
 
 ## Why
 

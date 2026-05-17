@@ -451,6 +451,8 @@ const List<_FaqItem> _faq = [
   ),
   _FaqItem(
     question: 'Can I overlay multiple images at once?',
-    answer: 'Not yet — multi-layer is on the roadmap (Sprint 5).',
+    answer: 'No — single overlay only. Multi-layer was considered and '
+        'scoped out as feature creep; the pixel-perfect comparison flow '
+        'works fine with one design at a time.',
   ),
 ];

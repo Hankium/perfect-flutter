@@ -1,7 +1,6 @@
-import 'dart:typed_data';
-
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:vm_service/vm_service.dart' hide Stack;
 
 import 'image_picker_web.dart';
@@ -658,6 +657,11 @@ class _PanelHomeState extends State<PanelHome> {
         title: const Text('Perfect Flutter'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.keyboard_outlined),
+            tooltip: 'Keyboard shortcuts',
+            onPressed: _showShortcutsDialog,
+          ),
+          IconButton(
             icon: const Icon(Icons.bolt),
             tooltip: 'Hot reload app',
             onPressed: _busy ? null : _hotReload,
@@ -669,12 +673,16 @@ class _PanelHomeState extends State<PanelHome> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _statusBanner(),
+      body: CallbackShortcuts(
+        bindings: _shortcutBindings(),
+        child: Focus(
+          autofocus: true,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _statusBanner(),
             const SizedBox(height: 16),
             _SectionCard(
               icon: Icons.layers,
@@ -696,10 +704,131 @@ class _PanelHomeState extends State<PanelHome> {
               title: 'Transforms',
               child: _transformsBody(),
             ),
-            _diagnostics(),
-          ],
+                _diagnostics(),
+              ],
+            ),
+          ),
         ),
       ),
+    );
+  }
+
+  Map<ShortcutActivator, VoidCallback> _shortcutBindings() {
+    void run(VoidCallback fn) {
+      if (_transforms != null) fn();
+    }
+    return <ShortcutActivator, VoidCallback>{
+      // Offset nudges — Arrow = ±1 px, Shift+Arrow = ±10 px.
+      const SingleActivator(LogicalKeyboardKey.arrowLeft):
+          () => run(() => _nudgeOffsetX(-1)),
+      const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true):
+          () => run(() => _nudgeOffsetX(-10)),
+      const SingleActivator(LogicalKeyboardKey.arrowRight):
+          () => run(() => _nudgeOffsetX(1)),
+      const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true):
+          () => run(() => _nudgeOffsetX(10)),
+      const SingleActivator(LogicalKeyboardKey.arrowUp):
+          () => run(() => _nudgeOffsetY(-1)),
+      const SingleActivator(LogicalKeyboardKey.arrowUp, shift: true):
+          () => run(() => _nudgeOffsetY(-10)),
+      const SingleActivator(LogicalKeyboardKey.arrowDown):
+          () => run(() => _nudgeOffsetY(1)),
+      const SingleActivator(LogicalKeyboardKey.arrowDown, shift: true):
+          () => run(() => _nudgeOffsetY(10)),
+      // Opacity — [ / ] step ±5%.
+      const SingleActivator(LogicalKeyboardKey.bracketLeft): () => run(() {
+            _onOpacityChanged((_opacity - 0.05).clamp(0.0, 1.0).toDouble());
+          }),
+      const SingleActivator(LogicalKeyboardKey.bracketRight): () => run(() {
+            _onOpacityChanged((_opacity + 0.05).clamp(0.0, 1.0).toDouble());
+          }),
+      // Scale — = / - and numpad +/- step ±5%.
+      const SingleActivator(LogicalKeyboardKey.equal):
+          () => run(() => _nudgeScale(1.05)),
+      const SingleActivator(LogicalKeyboardKey.minus):
+          () => run(() => _nudgeScale(1 / 1.05)),
+      const SingleActivator(LogicalKeyboardKey.numpadAdd):
+          () => run(() => _nudgeScale(1.05)),
+      const SingleActivator(LogicalKeyboardKey.numpadSubtract):
+          () => run(() => _nudgeScale(1 / 1.05)),
+      // Flip
+      const SingleActivator(LogicalKeyboardKey.keyH):
+          () => run(_onFlipHToggled),
+      const SingleActivator(LogicalKeyboardKey.keyV):
+          () => run(_onFlipVToggled),
+      // Visibility
+      const SingleActivator(LogicalKeyboardKey.space):
+          () => run(() => _onVisibleToggled(!_visible)),
+    };
+  }
+
+  void _showShortcutsDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        Widget row(String key, String description) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    constraints: const BoxConstraints(minWidth: 96),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Text(
+                      key,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(description)),
+                ],
+              ),
+            );
+        return AlertDialog(
+          icon: const Icon(Icons.keyboard_outlined),
+          title: const Text('Keyboard shortcuts'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                row('Arrows', 'Nudge offset by 1 px'),
+                row('Shift+Arrows', 'Nudge offset by 10 px'),
+                row('[  ]', 'Decrease / increase opacity (5%)'),
+                row('-  =', 'Scale down / up (5%)'),
+                row('H', 'Flip horizontally'),
+                row('V', 'Flip vertically'),
+                row('Space', 'Show / hide overlay'),
+                const SizedBox(height: 8),
+                Text(
+                  'Shortcuts are inactive while typing in a text field.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
     );
   }
 
