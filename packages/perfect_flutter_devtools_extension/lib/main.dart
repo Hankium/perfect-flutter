@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:devtools_extensions/devtools_extensions.dart';
 import 'package:flutter/material.dart';
-import 'package:vm_service/vm_service.dart';
+import 'package:vm_service/vm_service.dart' hide Stack;
 
 import 'image_picker_web.dart';
 import 'image_uploader.dart';
@@ -674,167 +674,252 @@ class _PanelHomeState extends State<PanelHome> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _injectionSection(),
-            const SizedBox(height: 24),
-            _imageSection(),
-            const SizedBox(height: 24),
-            _displaySection(),
-            const SizedBox(height: 24),
-            _transformsSection(),
-            const SizedBox(height: 24),
-            _vmSection(),
+            _statusBanner(),
+            const SizedBox(height: 16),
+            _SectionCard(
+              icon: Icons.layers,
+              title: 'Overlay',
+              child: _overlayBody(),
+            ),
+            _SectionCard(
+              icon: Icons.image_outlined,
+              title: 'Design image',
+              child: _imageBody(),
+            ),
+            _SectionCard(
+              icon: Icons.visibility_outlined,
+              title: 'Display',
+              child: _displayBody(),
+            ),
+            _SectionCard(
+              icon: Icons.tune,
+              title: 'Transforms',
+              child: _transformsBody(),
+            ),
+            _diagnostics(),
           ],
         ),
       ),
     );
   }
 
-  Widget _injectionSection() {
+  Widget _statusBanner() {
     return ValueListenableBuilder<IsolateRef?>(
       valueListenable: serviceManager.isolateManager.mainIsolate,
       builder: (context, iso, _) {
-        final isolateName = iso?.name ?? '(no isolate)';
-        final isolateId = iso?.id ?? '';
         final injected = _injection != null;
+        final IconData icon;
+        final String label;
+        final Color color;
+        if (iso?.id == null) {
+          icon = Icons.cloud_off_outlined;
+          label = 'Not connected to a Flutter app';
+          color = Theme.of(context).colorScheme.error;
+        } else if (injected) {
+          icon = _visible
+              ? Icons.check_circle_outline
+              : Icons.visibility_off_outlined;
+          label = _visible
+              ? 'Overlay active on ${iso!.name ?? "isolate"}'
+              : 'Overlay injected but hidden';
+          color = _visible
+              ? const Color(0xFF2E7D32) // Material green 800
+              : Theme.of(context).colorScheme.outline;
+        } else {
+          icon = Icons.radio_button_unchecked;
+          label =
+              'Connected to ${iso!.name ?? "isolate"} — overlay not injected';
+          color = Theme.of(context).colorScheme.outline;
+        }
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: color),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w500),
+                ),
+              ),
+              if (_busy || _restoring || _uploading)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
+  Widget _overlayBody() {
+    return ValueListenableBuilder<IsolateRef?>(
+      valueListenable: serviceManager.isolateManager.mainIsolate,
+      builder: (context, iso, _) {
+        final injected = _injection != null;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Overlay',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            _kv('Isolate', '$isolateName  ·  $isolateId'),
-            _kv(
-              'State',
-              injected
-                  ? 'injected (entry ${_injection!.entryRef})'
-                  : 'not injected',
-            ),
-            if (_injection != null)
-              _kv('Target lib', _injection!.targetLibraryUri),
-            if (_injectionError != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: SelectableText(
-                  _injectionError!,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 FilledButton.icon(
-                  icon: const Icon(Icons.layers),
-                  label: const Text('Inject overlay'),
+                  icon: const Icon(Icons.layers, size: 18),
+                  label: const Text('Inject'),
                   onPressed:
                       (_busy || injected || iso?.id == null) ? null : _inject,
                 ),
-                const SizedBox(width: 8),
                 OutlinedButton.icon(
-                  icon: const Icon(Icons.layers_clear),
-                  label: const Text('Remove overlay'),
+                  icon: const Icon(Icons.layers_clear, size: 18),
+                  label: const Text('Remove'),
                   onPressed: (_busy || !injected) ? null : _remove,
                 ),
-                if (_cachedImageBytes != null && !injected) ...[
-                  const SizedBox(width: 8),
+                if (_cachedImageBytes != null && !injected)
                   OutlinedButton.icon(
-                    icon: const Icon(Icons.restore),
+                    icon: const Icon(Icons.restore, size: 18),
                     label: const Text('Restore'),
                     onPressed:
                         (_busy || _restoring) ? null : _restoreAfterRestart,
                   ),
-                ],
-                const SizedBox(width: 12),
-                if (_busy || _restoring)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Inject creates a single OverlayEntry that listens for an image. '
-              'Until one is uploaded, a magenta placeholder renders.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            if (_injectionError != null) ...[
+              const SizedBox(height: 12),
+              _errorBanner(_injectionError!),
+            ],
           ],
         );
       },
     );
   }
 
-  Widget _imageSection() {
+  Widget _imageBody() {
     final injected = _injection != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Image', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        _kv('Current', _lastImageName ?? '(none tracked — placeholder or pre-refresh image)'),
-        if (_uploadError != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: SelectableText(
-              _uploadError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
+        _imageThumbnail(),
         const SizedBox(height: 12),
-        Row(
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             FilledButton.icon(
-              icon: const Icon(Icons.image),
-              label: const Text('Pick image'),
-              onPressed: (_uploading || !injected) ? null : _pickAndUploadImage,
+              icon: const Icon(Icons.upload_file, size: 18),
+              label: Text(_lastImageName == null ? 'Pick image' : 'Replace'),
+              onPressed:
+                  (_uploading || !injected) ? null : _pickAndUploadImage,
             ),
-            const SizedBox(width: 8),
             OutlinedButton.icon(
-              icon: const Icon(Icons.clear),
-              label: const Text('Clear image'),
-              onPressed: (_uploading || !injected) ? null : _clearImage,
+              icon: const Icon(Icons.clear, size: 18),
+              label: const Text('Clear'),
+              onPressed:
+                  (_uploading || _lastImageName == null || !injected)
+                      ? null
+                      : _clearImage,
             ),
           ],
         ),
         if (_uploading) ...[
           const SizedBox(height: 12),
-          LinearProgressIndicator(value: _uploadProgress),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(value: _uploadProgress),
+          ),
           const SizedBox(height: 4),
           Text(
             'Uploading ${(_uploadProgress * 100).toStringAsFixed(0)}%',
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
-        if (!injected) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Inject the overlay first, then pick an image.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+        if (_uploadError != null) ...[
+          const SizedBox(height: 12),
+          _errorBanner(_uploadError!),
         ],
       ],
     );
   }
 
-  Widget _displaySection() {
+  Widget _imageThumbnail() {
+    final bytes = _cachedImageBytes;
+    return Container(
+      width: double.infinity,
+      height: 140,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: bytes == null
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.image_outlined,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.outline,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'No image uploaded',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                ),
+              ],
+            )
+          : Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.memory(bytes, fit: BoxFit.contain),
+                ),
+                Positioned(
+                  left: 8,
+                  bottom: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _lastImageName ?? 'image',
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _displayBody() {
     final enabled = _transforms != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Display', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           dense: true,
           title: const Text('Show overlay'),
-          subtitle: const Text(
-            'Hide without removing the entry — image and transforms are preserved.',
-          ),
+          subtitle: const Text('Hide without removing the entry.'),
           value: _visible,
           onChanged: enabled ? _onVisibleToggled : null,
         ),
@@ -843,36 +928,26 @@ class _PanelHomeState extends State<PanelHome> {
           dense: true,
           title: const Text('Follow scroll'),
           subtitle: const Text(
-            'Overlay translates with the app\'s largest vertical scrollable. '
-            'Toggle off then on after navigating to attach to the new screen.',
+            'Translate with the app\'s primary vertical scrollable.',
           ),
           value: _followScroll,
           onChanged: enabled ? _onFollowScrollToggled : null,
         ),
-        if (!enabled) ...[
-          const SizedBox(height: 4),
-          Text(
-            'Inject the overlay first to enable display toggles.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
       ],
     );
   }
 
-  Widget _transformsSection() {
+  Widget _transformsBody() {
     final enabled = _transforms != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Transforms', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        // Opacity
         Row(
           children: [
             const SizedBox(
               width: 70,
-              child: Text('Opacity', style: TextStyle(fontWeight: FontWeight.w600)),
+              child: Text('Opacity',
+                  style: TextStyle(fontWeight: FontWeight.w600)),
             ),
             Expanded(
               child: Slider(
@@ -891,7 +966,6 @@ class _PanelHomeState extends State<PanelHome> {
           ],
         ),
         const SizedBox(height: 8),
-        // Scale — multiplicative ±5% per click, direct entry via text field.
         _numericRow(
           label: 'Scale',
           controller: _scaleController,
@@ -911,7 +985,6 @@ class _PanelHomeState extends State<PanelHome> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
         const SizedBox(height: 4),
-        // Offset X
         _numericRow(
           label: 'Offset X',
           controller: _offsetXController,
@@ -936,12 +1009,12 @@ class _PanelHomeState extends State<PanelHome> {
           enabled: enabled,
         ),
         const SizedBox(height: 12),
-        // Flips
         Row(
           children: [
             const SizedBox(
               width: 70,
-              child: Text('Flip', style: TextStyle(fontWeight: FontWeight.w600)),
+              child:
+                  Text('Flip', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
             FilterChip(
               avatar: const Icon(Icons.swap_horiz, size: 18),
@@ -958,22 +1031,90 @@ class _PanelHomeState extends State<PanelHome> {
             ),
           ],
         ),
-        if (_transformError != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: SelectableText(
-              _transformError!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ),
-        if (!enabled) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Inject the overlay first to enable transforms.',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+        if (_transformError != null) ...[
+          const SizedBox(height: 12),
+          _errorBanner(_transformError!),
         ],
       ],
+    );
+  }
+
+  Widget _diagnostics() {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        leading: Icon(
+          Icons.terminal,
+          size: 20,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        title: Text(
+          'Diagnostics',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        subtitle: const Text('VM info, isolate, injected entry'),
+        children: [
+          if (_injection != null) ...[
+            _kv('Target lib', _injection!.targetLibraryUri),
+            _kv('Entry ref', _injection!.entryRef),
+          ],
+          if (_mainIsolate != null)
+            _kv(
+              'Isolate',
+              '${_mainIsolate!.name ?? "?"} · ${_mainIsolate!.id ?? "?"}',
+            ),
+          if (_vmError != null) ...[
+            const SizedBox(height: 8),
+            _errorBanner('VM error: $_vmError'),
+          ] else if (_vm != null) ...[
+            _kv('VM name', _vm!.name ?? 'unknown'),
+            _kv('Version', _vm!.version ?? 'unknown'),
+            _kv('Host CPU', _vm!.hostCPU ?? 'unknown'),
+            _kv(
+              'Architecture',
+              _vm!.architectureBits == null
+                  ? 'unknown'
+                  : '${_vm!.architectureBits}-bit',
+            ),
+            _kv('PID', '${_vm!.pid ?? 'unknown'}'),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _errorBanner(String message) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.error_outline,
+            color: Theme.of(context).colorScheme.onErrorContainer,
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SelectableText(
+              message,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1026,47 +1167,6 @@ class _PanelHomeState extends State<PanelHome> {
     );
   }
 
-  Widget _vmSection() {
-    if (_vmError != null) {
-      return SelectableText(
-        'VM error: $_vmError',
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
-      );
-    }
-    final vm = _vm;
-    if (vm == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    final isolates = vm.isolates ?? const <IsolateRef>[];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('VM', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        _kv('Name', vm.name ?? 'unknown'),
-        _kv('Version', vm.version ?? 'unknown'),
-        _kv('Host CPU', vm.hostCPU ?? 'unknown'),
-        _kv(
-          'Architecture',
-          vm.architectureBits == null
-              ? 'unknown'
-              : '${vm.architectureBits}-bit',
-        ),
-        _kv('PID', '${vm.pid ?? 'unknown'}'),
-        const SizedBox(height: 12),
-        Text(
-          'Isolates (${isolates.length})',
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        for (final iso in isolates)
-          Padding(
-            padding: const EdgeInsets.only(left: 8, top: 2),
-            child: SelectableText('· ${iso.name ?? '(unnamed)'}  ${iso.id}'),
-          ),
-      ],
-    );
-  }
-
   Widget _kv(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -1082,6 +1182,53 @@ class _PanelHomeState extends State<PanelHome> {
           ),
           Expanded(child: SelectableText(value)),
         ],
+      ),
+    );
+  }
+}
+
+/// Wraps a section in a Material card with a leading icon + title row.
+/// All four primary panel sections share this shell — visual rhythm and
+/// consistent padding without scattering Card/Padding constants.
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
+  final IconData icon;
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            child,
+          ],
+        ),
       ),
     );
   }
