@@ -27,7 +27,7 @@ class PerfectFlutter {
   static final ValueNotifier<MemoryImage?> _image =
       ValueNotifier<MemoryImage?>(null);
 
-  /// Overlay opacity in [0, 1]. 0.5 by default for natural design-vs-app
+  /// Overlay opacity in `[0, 1]`. 0.5 by default for natural design-vs-app
   /// comparison.
   static final ValueNotifier<double> _opacity = ValueNotifier<double>(0.5);
 
@@ -199,7 +199,7 @@ class PerfectFlutter {
   // All setters defer through [_safeApply] because evals can land in any
   // scheduler phase.
 
-  /// Sets overlay opacity, clamped to [0, 1].
+  /// Sets overlay opacity, clamped to `[0, 1]`.
   static void setOpacity(double v) =>
       _safeApply(() => _opacity.value = v.clamp(0.0, 1.0));
 

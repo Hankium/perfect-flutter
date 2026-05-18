@@ -20,6 +20,10 @@ example/analysis_options.yaml
 *.iml
 .idea/
 
+# Dartdoc local output — pub.dev regenerates this; shipping it would bloat
+# the archive by tens of MB for no reason.
+doc/api/
+
 # Root .gitignore excludes all `build/` directories, but the DevTools
 # extension bundle MUST ship in the archive. Negate it here so pub publishes
 # extension/devtools/build/ even though git ignores it.

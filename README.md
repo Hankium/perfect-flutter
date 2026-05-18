@@ -5,7 +5,7 @@ top of your running app — emulator, simulator, or physical device — from the
 DevTools panel. **No widget wrapping. No conditional debug paths.** A
 `dev_dependencies` entry plus one import line.
 
-> Status: pre-alpha. Sprints 1–5 of 6 done — full transform controls,
+> Status: pre-alpha. full transform controls,
 > scroll coupling, show/hide, hot-restart resilience (via panel
 > `localStorage`), keyboard shortcuts, and polished UI all shipped. S6
 > (hardening + pub.dev publish) remaining. Verified end-to-end on a
@@ -14,7 +14,7 @@ DevTools panel. **No widget wrapping. No conditional debug paths.** A
 ## Why
 
 Existing Flutter pixel-perfect packages require wrapping the root widget
-(`PixelPerfect(child: MyApp())`), which pollutes the tree and risks shipping
+(`Package(child: MyApp())`), which pollutes the tree and risks shipping
 overlay plumbing into release builds. `perfect_flutter` leaves your widget
 tree untouched: the DevTools extension uses the VM service to call into a
 small runtime helper, which inserts an `OverlayEntry` into the running
@@ -26,7 +26,7 @@ isolate. In release builds, tree-shaking strips the helper.
 
    ```yaml
    dev_dependencies:
-     perfect_flutter: ^0.1.0
+     perfect_flutter: ^0.1.32
    ```
 
 2. Add one import at the top of `lib/main.dart`:
@@ -48,20 +48,6 @@ isolate. In release builds, tree-shaking strips the helper.
 6. Upload a design image → overlay renders on device.
 
 No widget wrapping. No `runApp` changes.
-
-## Repo layout
-
-```
-perfect-flutter/
-  packages/
-    perfect_flutter/                    # published — runtime + bundled extension
-    perfect_flutter_devtools_extension/ # internal — Flutter web app (the panel UI)
-  scripts/
-    build_extension.sh                  # bundles extension into runtime package
-```
-
-See [PIXEL_PERFECT_PLAN.md](PIXEL_PERFECT_PLAN.md) for design and
-[SPRINT_PLAN.md](SPRINT_PLAN.md) for the roadmap.
 
 ## Development
 
