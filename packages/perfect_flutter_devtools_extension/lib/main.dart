@@ -392,8 +392,7 @@ class _PanelHomeState extends State<PanelHome> {
     } catch (e) {
       if (!mounted) return;
       final msg = e.toString();
-      final kernelFail =
-          msg.contains('kernel') || msg.contains('compile');
+      final kernelFail = msg.contains('kernel') || msg.contains('compile');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -688,27 +687,27 @@ class _PanelHomeState extends State<PanelHome> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _statusBanner(),
-            const SizedBox(height: 16),
-            _SectionCard(
-              icon: Icons.layers,
-              title: 'Overlay',
-              child: _overlayBody(),
-            ),
-            _SectionCard(
-              icon: Icons.image_outlined,
-              title: 'Design image',
-              child: _imageBody(),
-            ),
-            _SectionCard(
-              icon: Icons.visibility_outlined,
-              title: 'Display',
-              child: _displayBody(),
-            ),
-            _SectionCard(
-              icon: Icons.tune,
-              title: 'Transforms',
-              child: _transformsBody(),
-            ),
+                const SizedBox(height: 16),
+                _SectionCard(
+                  icon: Icons.layers,
+                  title: 'Overlay',
+                  child: _overlayBody(),
+                ),
+                _SectionCard(
+                  icon: Icons.image_outlined,
+                  title: 'Design image',
+                  child: _imageBody(),
+                ),
+                _SectionCard(
+                  icon: Icons.visibility_outlined,
+                  title: 'Display',
+                  child: _displayBody(),
+                ),
+                _SectionCard(
+                  icon: Icons.tune,
+                  title: 'Transforms',
+                  child: _transformsBody(),
+                ),
                 _diagnostics(),
               ],
             ),
@@ -722,24 +721,25 @@ class _PanelHomeState extends State<PanelHome> {
     void run(VoidCallback fn) {
       if (_transforms != null) fn();
     }
+
     return <ShortcutActivator, VoidCallback>{
       // Offset nudges — Arrow = ±1 px, Shift+Arrow = ±10 px.
-      const SingleActivator(LogicalKeyboardKey.arrowLeft):
-          () => run(() => _nudgeOffsetX(-1)),
-      const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true):
-          () => run(() => _nudgeOffsetX(-10)),
-      const SingleActivator(LogicalKeyboardKey.arrowRight):
-          () => run(() => _nudgeOffsetX(1)),
-      const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true):
-          () => run(() => _nudgeOffsetX(10)),
-      const SingleActivator(LogicalKeyboardKey.arrowUp):
-          () => run(() => _nudgeOffsetY(-1)),
-      const SingleActivator(LogicalKeyboardKey.arrowUp, shift: true):
-          () => run(() => _nudgeOffsetY(-10)),
-      const SingleActivator(LogicalKeyboardKey.arrowDown):
-          () => run(() => _nudgeOffsetY(1)),
-      const SingleActivator(LogicalKeyboardKey.arrowDown, shift: true):
-          () => run(() => _nudgeOffsetY(10)),
+      const SingleActivator(LogicalKeyboardKey.arrowLeft): () =>
+          run(() => _nudgeOffsetX(-1)),
+      const SingleActivator(LogicalKeyboardKey.arrowLeft, shift: true): () =>
+          run(() => _nudgeOffsetX(-10)),
+      const SingleActivator(LogicalKeyboardKey.arrowRight): () =>
+          run(() => _nudgeOffsetX(1)),
+      const SingleActivator(LogicalKeyboardKey.arrowRight, shift: true): () =>
+          run(() => _nudgeOffsetX(10)),
+      const SingleActivator(LogicalKeyboardKey.arrowUp): () =>
+          run(() => _nudgeOffsetY(-1)),
+      const SingleActivator(LogicalKeyboardKey.arrowUp, shift: true): () =>
+          run(() => _nudgeOffsetY(-10)),
+      const SingleActivator(LogicalKeyboardKey.arrowDown): () =>
+          run(() => _nudgeOffsetY(1)),
+      const SingleActivator(LogicalKeyboardKey.arrowDown, shift: true): () =>
+          run(() => _nudgeOffsetY(10)),
       // Opacity — [ / ] step ±5%.
       const SingleActivator(LogicalKeyboardKey.bracketLeft): () => run(() {
             _onOpacityChanged((_opacity - 0.05).clamp(0.0, 1.0).toDouble());
@@ -748,22 +748,22 @@ class _PanelHomeState extends State<PanelHome> {
             _onOpacityChanged((_opacity + 0.05).clamp(0.0, 1.0).toDouble());
           }),
       // Scale — = / - and numpad +/- step ±5%.
-      const SingleActivator(LogicalKeyboardKey.equal):
-          () => run(() => _nudgeScale(1.05)),
-      const SingleActivator(LogicalKeyboardKey.minus):
-          () => run(() => _nudgeScale(1 / 1.05)),
-      const SingleActivator(LogicalKeyboardKey.numpadAdd):
-          () => run(() => _nudgeScale(1.05)),
-      const SingleActivator(LogicalKeyboardKey.numpadSubtract):
-          () => run(() => _nudgeScale(1 / 1.05)),
+      const SingleActivator(LogicalKeyboardKey.equal): () =>
+          run(() => _nudgeScale(1.05)),
+      const SingleActivator(LogicalKeyboardKey.minus): () =>
+          run(() => _nudgeScale(1 / 1.05)),
+      const SingleActivator(LogicalKeyboardKey.numpadAdd): () =>
+          run(() => _nudgeScale(1.05)),
+      const SingleActivator(LogicalKeyboardKey.numpadSubtract): () =>
+          run(() => _nudgeScale(1 / 1.05)),
       // Flip
-      const SingleActivator(LogicalKeyboardKey.keyH):
-          () => run(_onFlipHToggled),
-      const SingleActivator(LogicalKeyboardKey.keyV):
-          () => run(_onFlipVToggled),
+      const SingleActivator(LogicalKeyboardKey.keyH): () =>
+          run(_onFlipHToggled),
+      const SingleActivator(LogicalKeyboardKey.keyV): () =>
+          run(_onFlipVToggled),
       // Visibility
-      const SingleActivator(LogicalKeyboardKey.space):
-          () => run(() => _onVisibleToggled(!_visible)),
+      const SingleActivator(LogicalKeyboardKey.space): () =>
+          run(() => _onVisibleToggled(!_visible)),
     };
   }
 
@@ -783,7 +783,8 @@ class _PanelHomeState extends State<PanelHome> {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
                         color: Theme.of(context).colorScheme.outlineVariant,
@@ -951,16 +952,14 @@ class _PanelHomeState extends State<PanelHome> {
             FilledButton.icon(
               icon: const Icon(Icons.upload_file, size: 18),
               label: Text(_lastImageName == null ? 'Pick image' : 'Replace'),
-              onPressed:
-                  (_uploading || !injected) ? null : _pickAndUploadImage,
+              onPressed: (_uploading || !injected) ? null : _pickAndUploadImage,
             ),
             OutlinedButton.icon(
               icon: const Icon(Icons.clear, size: 18),
               label: const Text('Clear'),
-              onPressed:
-                  (_uploading || _lastImageName == null || !injected)
-                      ? null
-                      : _clearImage,
+              onPressed: (_uploading || _lastImageName == null || !injected)
+                  ? null
+                  : _clearImage,
             ),
           ],
         ),
@@ -1034,8 +1033,7 @@ class _PanelHomeState extends State<PanelHome> {
                     ),
                     child: Text(
                       _lastImageName ?? 'image',
-                      style:
-                          const TextStyle(color: Colors.white, fontSize: 12),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
                 ),
@@ -1269,7 +1267,8 @@ class _PanelHomeState extends State<PanelHome> {
       children: [
         SizedBox(
           width: 70,
-          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+          child:
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         ),
         IconButton(
           icon: const Icon(Icons.remove),

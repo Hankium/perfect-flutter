@@ -57,8 +57,7 @@ class PerfectFlutter {
   /// Current Y scroll offset of the tracked scrollable. Subtracted from
   /// the user's manual Y offset so the overlay appears to scroll with the
   /// app content.
-  static final ValueNotifier<double> _scrollOffsetY =
-      ValueNotifier<double>(0);
+  static final ValueNotifier<double> _scrollOffsetY = ValueNotifier<double>(0);
 
   /// Guards against scheduling more than one post-frame tick at a time.
   /// The tick re-schedules itself while [_followScroll] is true; toggling
@@ -108,6 +107,7 @@ class PerfectFlutter {
       }
       e.visitChildren(visit);
     }
+
     visit(root);
     if (overlay == null) {
       throw StateError(
@@ -296,6 +296,7 @@ class PerfectFlutter {
       }
       e.visitChildren(visit);
     }
+
     visit(root);
     return best;
   }
@@ -340,8 +341,7 @@ class PerfectFlutter {
   static Widget _imageOverlay(MemoryImage image) => Transform.translate(
         // Follow scroll: subtract the tracked scrollable's pixel offset so
         // the overlay appears to move with content as the user scrolls.
-        offset:
-            _offset.value + Offset(0, -_scrollOffsetY.value),
+        offset: _offset.value + Offset(0, -_scrollOffsetY.value),
         child: Transform.scale(
           scale: _scale.value,
           alignment: Alignment.topLeft,

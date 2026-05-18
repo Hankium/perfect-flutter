@@ -22,10 +22,9 @@ class PickedImage {
 /// the browser's `FileReader` fails to read the file.
 Future<PickedImage?> pickImage() {
   final completer = Completer<PickedImage?>();
-  final input =
-      web.document.createElement('input') as web.HTMLInputElement
-        ..type = 'file'
-        ..accept = 'image/*';
+  final input = web.document.createElement('input') as web.HTMLInputElement
+    ..type = 'file'
+    ..accept = 'image/*';
 
   void completeNullOnce() {
     if (!completer.isCompleted) completer.complete(null);

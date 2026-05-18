@@ -99,23 +99,20 @@ class HomeScreen extends StatelessWidget {
           _SectionHeader('Tips'),
           _TipCard(
             title: 'Use opacity 0.5 to start',
-            body:
-                'Half-opacity makes it easy to spot drift between the design '
+            body: 'Half-opacity makes it easy to spot drift between the design '
                 'and the running screen. Tweak from there.',
           ),
           const SizedBox(height: 12),
           _TipCard(
             title: 'Toggle "Follow scroll" for long screens',
-            body:
-                'Designs that span multiple device heights need the overlay '
+            body: 'Designs that span multiple device heights need the overlay '
                 'to scroll with content. The Display section in DevTools has '
                 'a switch for this.',
           ),
           const SizedBox(height: 12),
           _TipCard(
             title: 'Flip H/V for mirror layouts',
-            body:
-                'RTL or symmetry checks: flip the overlay horizontally to '
+            body: 'RTL or symmetry checks: flip the overlay horizontally to '
                 'verify your layout mirrors correctly.',
           ),
           const SizedBox(height: 24),
