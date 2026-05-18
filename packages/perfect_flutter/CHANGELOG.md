@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.33
+
+- Fix repository URLs in `pubspec.yaml` and DevTools extension
+  `config.yaml` — they previously pointed at
+  `github.com/Hankium/perfect_flutter` (underscore, doesn't exist). The
+  actual repo is `github.com/Hankium/perfect-flutter` (dash).
+
 ## 0.1.32
 
 Initial public release.

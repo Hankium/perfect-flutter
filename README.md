@@ -20,7 +20,7 @@ isolate. In release builds, tree-shaking strips the helper.
 
    ```yaml
    dev_dependencies:
-     perfect_flutter: ^0.1.32
+     perfect_flutter: ^0.1.33
    ```
 
 2. Add one import at the top of `lib/main.dart`:

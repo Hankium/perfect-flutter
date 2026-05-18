@@ -13,7 +13,7 @@ this tool requires. In release builds, tree-shaking removes everything.
 
    ```yaml
    dev_dependencies:
-     perfect_flutter: ^0.1.32
+     perfect_flutter: ^0.1.33
    ```
 
 2. Add one import at the top of `lib/main.dart` (anywhere in your app works,
@@ -134,8 +134,8 @@ Inject — click it.
 
 ## Links
 
-- Source: <https://github.com/Hankium/perfect_flutter>
-- Issues: <https://github.com/Hankium/perfect_flutter/issues>
+- Source: <https://github.com/Hankium/perfect-flutter>
+- Issues: <https://github.com/Hankium/perfect-flutter/issues>
 
 ## License
 
