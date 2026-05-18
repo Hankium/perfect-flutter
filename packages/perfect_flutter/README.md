@@ -13,7 +13,7 @@ this tool requires. In release builds, tree-shaking removes everything.
 
    ```yaml
    dev_dependencies:
-     perfect_flutter: ^0.1.33
+     perfect_flutter: ^0.1.34
    ```
 
 2. Add one import at the top of `lib/main.dart` (anywhere in your app works,

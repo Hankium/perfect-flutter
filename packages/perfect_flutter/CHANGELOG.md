@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.34
+
+- Add demo GIFs to README — feature showcase for inject + upload, follow
+  scroll, opacity, and offset/scale/flip transforms.
+
 ## 0.1.33
 
 - Fix repository URLs in `pubspec.yaml` and DevTools extension
