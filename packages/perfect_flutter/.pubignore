@@ -1,0 +1,27 @@
+# Keep the published archive small. The example app is shipped so pub.dev can
+# render and score it, but we only need the Dart source + pubspec + README —
+# not the per-platform host code, build artifacts, or IDE files.
+
+example/android/
+example/ios/
+example/macos/
+example/linux/
+example/windows/
+example/web/
+example/build/
+example/.dart_tool/
+example/test/
+example/*.iml
+example/pubspec.lock
+example/devtools_options.yaml
+example/analysis_options.yaml
+
+# IDE files in the package itself
+*.iml
+.idea/
+
+# Root .gitignore excludes all `build/` directories, but the DevTools
+# extension bundle MUST ship in the archive. Negate it here so pub publishes
+# extension/devtools/build/ even though git ignores it.
+!extension/devtools/build/
+!extension/devtools/build/**

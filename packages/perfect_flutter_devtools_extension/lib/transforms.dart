@@ -62,6 +62,24 @@ class LatestValueQueue<T> {
   bool _pendingSet = false;
   bool _inFlight = false;
 
+  /// Upper bound on how long any single `_send` may run before the queue
+  /// gives up and resets. `service.evaluate` against a paused isolate (mid
+  /// hot-reload, breakpoint hit, transient disconnect) can hang indefinitely;
+  /// without a timeout, `_inFlight` stays true forever and the queue
+  /// silently swallows every subsequent `submit`.
+  static const Duration _sendTimeout = Duration(seconds: 3);
+
+  /// Drops any pending value and clears the in-flight flag. Call this when
+  /// the underlying connection has changed (e.g. isolate swap) so the next
+  /// `submit` flushes immediately instead of queuing behind a dead Future.
+  /// An old in-flight Future may still resolve later; that's harmless
+  /// because `_pending` is cleared and the post-await path becomes a no-op.
+  void reset() {
+    _pending = null;
+    _pendingSet = false;
+    _inFlight = false;
+  }
+
   void submit(T value) {
     if (_inFlight) {
       _pending = value;
@@ -74,18 +92,17 @@ class LatestValueQueue<T> {
   Future<void> _flush(T value) async {
     _inFlight = true;
     try {
-      await _send(value);
+      await _send(value).timeout(_sendTimeout);
     } catch (e) {
       onError?.call(e);
+    } finally {
+      _inFlight = false;
     }
     if (_pendingSet) {
       final next = _pending as T;
       _pending = null;
       _pendingSet = false;
-      // ignore: unawaited_futures — fire-and-forget chain continuation.
-      _flush(next);
-    } else {
-      _inFlight = false;
+      submit(next);
     }
   }
 }

@@ -16,6 +16,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// Internal helper called by the DevTools panel through `evaluate`.
 /// Not intended to be called from app code.
@@ -59,9 +60,10 @@ class PerfectFlutter {
   static final ValueNotifier<double> _scrollOffsetY =
       ValueNotifier<double>(0);
 
-  /// Scrollable position currently being followed. Captured at the moment
-  /// the user toggles Follow scroll on; cleared on toggle off.
-  static ScrollPosition? _trackedPosition;
+  /// Guards against scheduling more than one post-frame tick at a time.
+  /// The tick re-schedules itself while [_followScroll] is true; toggling
+  /// off lets the chain decay naturally on the next frame.
+  static bool _followTickScheduled = false;
 
   /// Buffer of base64-encoded image chunks accumulated by [appendChunk] and
   /// drained by [commitImage]. Buffered as a string rather than bytes to keep
@@ -136,9 +138,28 @@ class PerfectFlutter {
         ),
       ),
     );
-    overlay!.insert(entry);
     _entry = entry;
+    final captured = overlay!;
+    _safeApply(() => captured.insert(entry));
     return entry;
+  }
+
+  /// Runs [fn] in a scheduler phase where `setState` is legal. `service.
+  /// evaluate` calls land in arbitrary phases, including build / layout /
+  /// paint; mutating a `ValueNotifier` during those phases causes the
+  /// `ListenableBuilder` listener to call `setState`, which the framework
+  /// rejects with "Build scheduled during frame". `ChangeNotifier` swallows
+  /// the throw in `FlutterError.reportError`, so the eval looks successful
+  /// to the panel — but the overlay never rebuilds. Defer to post-frame
+  /// whenever we'd otherwise hit that path.
+  static void _safeApply(VoidCallback fn) {
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.idle ||
+        phase == SchedulerPhase.postFrameCallbacks) {
+      fn();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) => fn());
+    }
   }
 
   /// Removes a previously injected [OverlayEntry].
@@ -163,101 +184,133 @@ class PerfectFlutter {
       throw StateError('perfect_flutter: no chunks to commit.');
     }
     final Uint8List bytes = base64Decode(base64Str);
-    _image.value = MemoryImage(bytes);
+    _safeApply(() => _image.value = MemoryImage(bytes));
   }
 
   /// Clears any in-flight chunks and returns the overlay to its placeholder.
   static void clearImage() {
     _chunkBuffer.clear();
-    _image.value = null;
+    _safeApply(() => _image.value = null);
   }
 
   // Transform setters — each one mutates a single notifier and the
   // [ListenableBuilder] rebuilds only the overlay subtree. The panel calls
   // these via short eval expressions, e.g. `PerfectFlutter.setOpacity(0.5)`.
+  // All setters defer through [_safeApply] because evals can land in any
+  // scheduler phase.
 
   /// Sets overlay opacity, clamped to [0, 1].
-  static void setOpacity(double v) => _opacity.value = v.clamp(0.0, 1.0);
+  static void setOpacity(double v) =>
+      _safeApply(() => _opacity.value = v.clamp(0.0, 1.0));
 
   /// Sets overlay translation in logical pixels.
   static void setOffset(double dx, double dy) =>
-      _offset.value = Offset(dx, dy);
+      _safeApply(() => _offset.value = Offset(dx, dy));
 
   /// Sets uniform scale, clamped to a sane range.
-  static void setScale(double v) => _scale.value = v.clamp(0.01, 100.0);
+  static void setScale(double v) =>
+      _safeApply(() => _scale.value = v.clamp(0.01, 100.0));
 
   /// Toggles horizontal mirror.
-  static void setFlipH(bool v) => _flipH.value = v;
+  static void setFlipH(bool v) => _safeApply(() => _flipH.value = v);
 
   /// Toggles vertical mirror.
-  static void setFlipV(bool v) => _flipV.value = v;
+  static void setFlipV(bool v) => _safeApply(() => _flipV.value = v);
 
   /// Shows or hides the overlay without removing the entry. State (image,
   /// transforms, follow-scroll attachment) is preserved while hidden.
-  static void setVisible(bool v) => _visible.value = v;
+  static void setVisible(bool v) => _safeApply(() => _visible.value = v);
 
-  /// Toggles Follow scroll. Attaches to the largest vertical scrollable in
-  /// the app on the next frame. If no scrollable is present yet, the
-  /// attachment quietly no-ops — re-toggle after navigating to a screen
-  /// with a scroll view, or the panel can offer a Rescan button later.
+  /// Toggles Follow scroll. Instead of attaching a listener to a single
+  /// [ScrollPosition] picked at toggle time (which goes stale on screen
+  /// navigation and frequently picks a deeply-nested inner scrollable on
+  /// complex screens), this re-picks the currently visible scrollable
+  /// every frame via a render-aware walk — see [_findActiveScrollPosition].
+  ///
+  /// Toggling on schedules the first post-frame tick. The tick re-schedules
+  /// itself while [_followScroll] stays true; toggling off lets the chain
+  /// decay on the next frame (no removal API for post-frame callbacks).
   static void setFollowScroll(bool v) {
     if (_followScroll.value == v) return;
-    _followScroll.value = v;
-    if (v) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_followScroll.value) return;
-        final pos = _findPrimaryScrollPosition();
-        if (pos == null) return;
-        _trackedPosition = pos;
-        _scrollOffsetY.value = pos.pixels;
-        pos.addListener(_onScrollChanged);
-      });
-    } else {
-      _detachScroll();
-    }
+    _safeApply(() {
+      _followScroll.value = v;
+      if (!v) _scrollOffsetY.value = 0;
+    });
+    if (v) _scheduleFollowTick();
   }
 
-  static void _onScrollChanged() {
-    final pos = _trackedPosition;
-    if (pos == null) return;
-    if (pos.hasContentDimensions) {
-      _scrollOffsetY.value = pos.pixels;
-    }
+  static void _scheduleFollowTick() {
+    if (_followTickScheduled) return;
+    _followTickScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _followTickScheduled = false;
+      if (!_followScroll.value) return;
+      final pos = _findActiveScrollPosition();
+      if (pos != null && pos.hasContentDimensions) {
+        // ValueNotifier short-circuits identical values, but the explicit
+        // check avoids a `_safeApply` -> notify hop when the scroll hasn't
+        // changed (idle screen).
+        if (_scrollOffsetY.value != pos.pixels) {
+          _safeApply(() => _scrollOffsetY.value = pos.pixels);
+        }
+      }
+      _scheduleFollowTick();
+    });
   }
 
-  static void _detachScroll() {
-    _trackedPosition?.removeListener(_onScrollChanged);
-    _trackedPosition = null;
-    _scrollOffsetY.value = 0;
-  }
-
-  /// Walks the Element tree from rootElement and returns the
-  /// [ScrollPosition] of the largest vertical scrollable on screen.
-  /// "Largest" is measured by viewport dimension, which correlates well
-  /// with "the main page scroller" vs. small nested lists.
-  static ScrollPosition? _findPrimaryScrollPosition() {
+  /// Picks the vertical [ScrollPosition] whose render box covers the most
+  /// screen area — works even when the app has dozens of inner scrollables
+  /// (dropdowns, tab inners, slivers) because a full-screen list always
+  /// beats a 200x200 dropdown by area. Re-evaluates each frame, so route
+  /// changes and overlays are handled transparently.
+  static ScrollPosition? _findActiveScrollPosition() {
     final root = WidgetsBinding.instance.rootElement;
     if (root == null) return null;
+    final screen = _screenRect();
     ScrollPosition? best;
-    double bestDim = 0;
+    double bestArea = 0;
     void visit(Element e) {
       if (e is StatefulElement && e.state is ScrollableState) {
         try {
-          final pos = (e.state as ScrollableState).position;
-          if (pos.axis == Axis.vertical && pos.hasViewportDimension) {
-            if (pos.viewportDimension > bestDim) {
-              best = pos;
-              bestDim = pos.viewportDimension;
+          final ss = e.state as ScrollableState;
+          final pos = ss.position;
+          if (pos.axis != Axis.vertical || !pos.hasViewportDimension) {
+            e.visitChildren(visit);
+            return;
+          }
+          final ro = ss.context.findRenderObject();
+          if (ro is RenderBox && ro.attached && ro.hasSize) {
+            final rect = ro.localToGlobal(Offset.zero) & ro.size;
+            final vis = rect.intersect(screen);
+            if (!vis.isEmpty) {
+              final area = vis.width * vis.height;
+              if (area > bestArea) {
+                bestArea = area;
+                best = pos;
+              }
             }
           }
         } catch (_) {
-          // Position not yet attached; skip.
+          // Position not yet attached or render object not laid out; skip.
         }
       }
       e.visitChildren(visit);
     }
     visit(root);
     return best;
+  }
+
+  /// Logical-pixel rect of the implicit view. Falls back to the root
+  /// render object's size if the platform view isn't accessible yet.
+  static Rect _screenRect() {
+    final view = WidgetsBinding.instance.platformDispatcher.implicitView;
+    if (view != null) {
+      final size = view.physicalSize / view.devicePixelRatio;
+      return Offset.zero & Size(size.width, size.height);
+    }
+    final ro = WidgetsBinding.instance.rootElement?.findRenderObject();
+    if (ro is RenderBox && ro.hasSize) return Offset.zero & ro.size;
+    return Rect.zero;
   }
 
   static Widget _placeholder() => Container(

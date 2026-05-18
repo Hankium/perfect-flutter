@@ -1,17 +1,26 @@
 # perfect_flutter_example
 
-A new Flutter project.
+Demo app for the [`perfect_flutter`](https://pub.dev/packages/perfect_flutter)
+package. A simple `MaterialApp` with cards, lists, and an expandable FAQ —
+designed to exercise the overlay against realistic UI surfaces.
 
-## Getting Started
+## Run it
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+Then open DevTools (the URL is printed by `flutter run`) and switch to the
+**Perfect Flutter** tab. Click **Inject**, upload a design image, and adjust.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## What this app shows
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The only `perfect_flutter`-related code is two lines in `lib/main.dart`:
+
+```dart
+// ignore: unused_import, depend_on_referenced_packages
+import 'package:perfect_flutter/perfect_flutter.dart';
+```
+
+That's it. No widget wrapping, no `runApp` changes, no debug branches.

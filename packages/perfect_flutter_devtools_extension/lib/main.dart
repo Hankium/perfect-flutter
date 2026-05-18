@@ -164,6 +164,11 @@ class _PanelHomeState extends State<PanelHome> {
   void _onIsolateChanged() {
     // A new main isolate means any previous injection ref is invalid.
     if (!mounted) return;
+    // Drop any in-flight eval state so the queues don't hold on to Futures
+    // belonging to the now-dead isolate.
+    _opacityQueue.reset();
+    _scaleQueue.reset();
+    _offsetQueue.reset();
     final hadCache = _cachedImageBytes != null;
     setState(() {
       _injection = null;
