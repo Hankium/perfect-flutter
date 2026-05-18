@@ -86,20 +86,30 @@ isn't there:
 3. The overlay replaces the placeholder, centered and at 50% opacity by
    default.
 
+![Inject overlay and upload a design](https://github.com/Hankium/perfect-flutter/blob/main/doc/gifs/startup.gif?raw=true)
+
 ### 4. Align the overlay
 
 Use the panel controls:
 
 - **Opacity** — slider, 0 to 1.
+
+  ![Opacity](https://github.com/Hankium/perfect-flutter/blob/main/doc/gifs/opacity.gif?raw=true)
+
 - **Scale** — numeric row with ± buttons (multiplicative ±5% per click,
   range 0.01–100).
 - **Offset X / Y** — numeric rows with ±1 px nudges.
 - **Flip H / V** — toggle chips.
+
+  ![Transform controls](https://github.com/Hankium/perfect-flutter/blob/main/doc/gifs/controls.gif?raw=true)
+
 - **Show / hide** — temporarily hide the overlay without losing state.
 - **Follow scroll** — opt-in toggle that translates the overlay with the
   app's currently-visible vertical scrollable. Picks the right scrollable
   per-frame by visible area, so route changes and inner lists handle
   cleanly.
+
+  ![Follow scroll](https://github.com/Hankium/perfect-flutter/blob/main/doc/gifs/scroll.gif?raw=true)
 
 Or use keyboard shortcuts (focus the panel first):
 

@@ -42,24 +42,60 @@ this tool requires. In release builds, tree-shaking removes everything.
 
 No widget wrapping. No `runApp` changes. No conditional debug branches.
 
-## Panel features
+## Features
 
-- **Overlay** — Inject / Remove / Restore.
-- **Design image** — native file picker, thumbnail preview, upload progress.
-- **Display** — show/hide toggle, follow-scroll toggle (off by default).
-- **Transforms** — opacity slider, scale (numeric ±5%), offset X/Y (±1 px),
-  flip H/V.
-- **Hot reload from panel** — calls `service.reloadSources`; falls back
-  to a "press `r` in your terminal" message when the kernel task is owned
-  by `flutter run`.
-- **Keyboard shortcuts** — Arrows = ±1 px offset, Shift+Arrows = ±10 px,
-  `[`/`]` = opacity ±5%, `-`/`=` = scale ±5%, `h`/`v` = flip,
-  `space` = show/hide. (Discoverable via the keyboard icon in the app bar.)
-- **Hot-restart resilience** — image + transforms persist in `localStorage`
-  and auto-restore against the new isolate.
+### Inject an overlay and upload a design
 
-Touches always pass through to the app — the overlay sits behind an
-`IgnorePointer`.
+Click **Inject** in the panel → a magenta placeholder renders on the device.
+Then pick a PNG / JPG — the upload streams in 256 KB chunks with a progress
+bar and the overlay replaces the placeholder at 50% opacity, centered.
+
+![Inject overlay and upload a design](https://github.com/Hankium/perfect-flutter/blob/main/doc/gifs/startup.gif?raw=true)
+
+### Follow scroll
+
+Opt-in toggle (off by default). The overlay translates with the app's
+currently-visible vertical scrollable. Picks the right scrollable per-frame
+by visible area, so route changes and nested inner lists handle cleanly.
+
+![Follow scroll](https://github.com/Hankium/perfect-flutter/blob/main/doc/gifs/scroll.gif?raw=true)
+
+### Opacity
+
+Slider from 0 to 1.
+
+![Opacity](https://github.com/Hankium/perfect-flutter/blob/main/doc/gifs/opacity.gif?raw=true)
+
+### Offset, scale, flip
+
+Numeric rows with ±1 px nudges for offset; multiplicative ±5% per click for
+scale (range 0.01–100); toggle chips for flip H / V.
+
+![Transform controls](https://github.com/Hankium/perfect-flutter/blob/main/doc/gifs/controls.gif?raw=true)
+
+### Hot-restart resilience
+
+Image bytes + transforms persist to `localStorage` and auto-restore against
+the new isolate within ~2s. Manual **Restore** button as fallback if the
+DevTools iframe remounts before the auto-trigger fires.
+
+### Hot reload from panel
+
+The ⚡ app-bar button calls `service.reloadSources`; falls back to a
+"press `r` in your terminal" message when the kernel task is owned by
+`flutter run`.
+
+### Keyboard shortcuts
+
+Arrows = ±1 px offset, Shift+Arrows = ±10 px, `[` / `]` = opacity ±5%,
+`-` / `=` = scale ±5%, `h` / `v` = flip, `space` = show/hide. Discoverable
+via the keyboard icon in the app bar.
+
+### Touch passthrough
+
+Taps, scrolls, drags, and gestures all pass through to the app — the
+overlay sits behind an `IgnorePointer`. You can interact with your app
+normally while comparing against the design.
 
 ## FAQ
 
